@@ -117,7 +117,13 @@ const isExpanded = (messageId: string): boolean => {
 // 清空对话历史
 const clearHistory = () => {
   if (confirm('确定要清空所有对话历史吗？')) {
-    messages.value = [];
+    // 保留欢迎消息（如果存在）
+    const welcomeMessage = messages.value.find(msg => msg.id === 'welcome');
+    if (welcomeMessage) {
+      messages.value = [welcomeMessage];
+    } else {
+      messages.value = [];
+    }
     saveMessages();
   }
 };
@@ -156,10 +162,11 @@ onMounted(() => {
   <div class="chat-room">
     <div class="chat-header">
       <h2>AI对话助手</h2>
+      <button class="clear-history-btn" @click="clearHistory" title="清空历史">
+        +
+      </button>
     </div>
-    <button class="clear-history-btn" @click="clearHistory">
-        清空历史
-    </button>
+    
     <div id="chat-container" class="chat-container">
       <div v-for="message in messages" :key="message.id" :class="['message', message.sender]">
         
@@ -222,12 +229,23 @@ onMounted(() => {
 .clear-history-btn {
   background-color: rgba(255, 255, 255, 0.2);
   color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
+  border: none; /* 移除默认边框 */
+  outline: none; /* 移除点击后的轮廓 */
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transform: rotate(45deg);
+}
+
+.clear-history-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 .thinking-content {
