@@ -4,7 +4,7 @@ export interface Message {
   content: string;
   sender: 'user' | 'ai';
   timestamp: Date;
-  thinking?: string;  // 新增思考内容字段
+  thinking?: string; // 添加思考过程字段
 }
 
 // 聊天服务类

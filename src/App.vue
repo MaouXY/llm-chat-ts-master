@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import ChatRoom from './components/ChatRoom.vue'
+// 路由配置
 </script>
-
 
 <template>
   <div id="app">
-    <ChatRoom />
+    <router-view />
   </div>
 </template>
 
