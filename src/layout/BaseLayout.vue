@@ -32,13 +32,6 @@
   </div>
   <!-- 主要内容-手机展示框 -->
   <div class="phone-frame">
-    <!-- 手机顶部状态栏 -->
-    <div class="phone-status-bar">
-      <span class="dot red"></span>
-      <span class="dot yellow"></span>
-      <span class="dot green"></span>
-      <span class="title">CareSync AI 儿童端</span>
-    </div>
     <router-view :key="currentTab"/>
   </div>
   <!-- 页脚 -->
@@ -128,8 +121,8 @@ const switchTab = (tabName: string) => {
 }
 
 .phone-frame {
-  width: 320px;
-  height: 600px;
+  width: 360px;
+  height: 800px;
   border: 8px solid #000;
   border-radius: 30px;
   background-color: #fff;
