@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/marked": "^5.0.2",
     "@types/three": "^0.180.0",
+    "axios": "^1.13.2",
     "marked": "^16.3.0",
     "three": "^0.180.0",
     "vue": "^3.5.17",

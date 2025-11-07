@@ -1,178 +1,179 @@
 <template>
-  <div class="font-sans bg-gray-900 text-white min-h-screen flex flex-col">
-    <!-- 顶部导航 -->
-    <header class="bg-gray-800 py-4 px-6 shadow-md">
-      <div class="container mx-auto flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-          <i class="fa fa-mobile text-3xl text-primary"></i>
-          <h1 class="text-xl font-bold">CareSync AI 儿童端演示界面</h1>
-        </div>
-        <div class="flex items-center space-x-4">
-          <button @click="toggleTheme" class="p-2 rounded-full hover:bg-gray-700 transition-custom">
-            <i class="fa text-xl" :class="isDarkTheme ? 'fa-sun-o' : 'fa-moon-o'"></i>
-          </button>
-          <button @click="toggleFullscreen" class="p-2 rounded-full hover:bg-gray-700 transition-custom">
-            <i class="fa fa-expand text-xl"></i>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- 控制按钮区 -->
-    <div class="container mx-auto px-6 py-4 flex flex-wrap gap-2 justify-center">
+  <div class="base-layout">
+  <!-- 页眉 -->
+  <div class="header">
+    <h1>CareSync AI 儿童端演示界面</h1>
+  </div>
+  <!-- 导航栏 -->
+  <div class="nav-group">
+    <div class="tabs">
+      <!-- 登陆页面按钮 -->
       <button 
-        @click="navigateTo('login')" 
-        :class="['nav-btn px-4 py-2 text-white rounded-lg shadow transition-custom', 
-                currentRoute === 'login' ? 'bg-primary hover:bg-primary/90' : 'bg-gray-700 hover:bg-gray-600']"
+        @click="switchTab('login')"
+        :class="{ active: currentTab === 'login' }"
       >
-        <i class="fa fa-sign-in mr-2"></i> 登录页面
+        登录页面
       </button>
+      <!-- 聊天页面按钮 -->
       <button 
-        @click="navigateTo('home')" 
-        :class="['nav-btn px-4 py-2 text-white rounded-lg shadow transition-custom', 
-                currentRoute === 'home' ? 'bg-primary hover:bg-primary/90' : 'bg-gray-700 hover:bg-gray-600']"
+        @click="switchTab('chat')"
+        :class="{ active: currentTab === 'chat' }"
       >
-        <i class="fa fa-home mr-2"></i> 聊天主页
+        聊天页面
       </button>
+      <!-- 数字人对话页面按钮 -->
       <button 
-        @click="navigateTo('digitalPerson')" 
-        :class="['nav-btn px-4 py-2 text-white rounded-lg shadow transition-custom', 
-                currentRoute === 'digitalPerson' ? 'bg-primary hover:bg-primary/90' : 'bg-gray-700 hover:bg-gray-600']"
+        @click="switchTab('live')"
+        :class="{ active: currentTab === 'live' }"
       >
-        <i class="fa fa-video-camera mr-2"></i> 数字人对话
+        数字人对话
       </button>
-      <div class="ml-auto flex items-center gap-4">
-        <label class="flex items-center space-x-2">
-          <input type="checkbox" v-model="showBrowserUI" class="form-checkbox rounded text-primary">
-          <span>显示浏览器UI</span>
-        </label>
-      </div>
     </div>
-
-    <!-- 主要内容区域 - 手机原型展示 -->
-    <main class="container mx-auto flex-1 flex items-center justify-center p-4">
-      <!-- 竖向长方形框 - 模拟手机 -->
-      <div class="phone-frame rounded-[50px] bg-gray-100 relative overflow-hidden w-[375px] h-[812px] flex flex-col">
-        <!-- 浏览器UI (可隐藏) -->
-        <div v-if="showBrowserUI" class="bg-gray-800 text-white text-xs py-2 px-4 flex items-center space-x-2">
-          <div class="w-3 h-3 rounded-full bg-red-500"></div>
-          <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div class="w-3 h-3 rounded-full bg-green-500"></div>
-          <div class="flex-1 text-center">CareSync AI 儿童端</div>
-        </div>
-
-        <!-- 屏幕内容区域 -->
-        <div class="flex-1 overflow-hidden">
-          <!-- 路由视图 -->
-          <router-view></router-view>
-        </div>
-      </div>
-    </main>
+  </div>
+  <!-- 主要内容-手机展示框 -->
+  <div class="phone-frame">
+    <!-- 手机顶部状态栏 -->
+    <div class="phone-status-bar">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title">CareSync AI 儿童端</span>
+    </div>
+    <router-view :key="currentTab"/>
+  </div>
+  <!-- 页脚 -->
+  <div class="footer">
+      <p>CareSync AI 儿童情感陪伴与服务项目 © 2025</p>
+    </div>
   </div>
 </template>
-
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
+// 初始选中当前路由对应的标签，从路由路径中提取标签名
+const currentTab = ref(route.path.split('/').pop() || 'login');
 
-// 响应式数据
-const isDarkTheme = ref(true)
-const showBrowserUI = ref(true)
+// 监听路由变化，自动更新 currentTab
+watch(() => route.path, (newPath) => {
+  const tabName = newPath.split('/').pop() || 'login';
+  currentTab.value = tabName;
+});
 
-// 计算当前路由
-const currentRoute = computed(() => {
-  return route.name?.toString() || 'login'
-})
+// 切换标签时跳转路由
+const switchTab = (tabName: string) => {
+  currentTab.value = tabName;
+  router.push(`/${tabName}`);
+};
 
-// 方法
-const toggleTheme = () => {
-  isDarkTheme.value = !isDarkTheme.value
-  // 这里可以添加主题切换的逻辑
-}
-
-const toggleFullscreen = () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen()
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    }
-  }
-}
-
-const navigateTo = (routeName: string) => {
-  router.push({ name: routeName })
-}
 </script>
-
 <style scoped>
-@import url('https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css');
+.base-layout {
+  width: 100vw;
+  height: 100%;
+  min-height: 100vh;
+  background-color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  color: #e2e8f0;
+}
 
-.transition-custom {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 3vw;
+  background-color:#1F2937;
+}
+
+.header h1 {
+  font-size: 1.5vw;
+  font-weight: 600;
+  margin: 0;
+}
+
+.nav-group {
+  display: flex;
+  justify-content: space-between;
+  width: 90%;
+  max-width: 1200px;
+  margin-bottom: 50px;
+  margin-top: 20px;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+}
+
+
+.tabs button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #1e293b;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tabs button.active {
+  background-color: #10b981;
+  color: #fff;
 }
 
 .phone-frame {
-  box-shadow: 0 0 0 16px #111, 0 0 0 18px #333, 0 10px 30px rgba(0,0,0,0.4);
+  width: 320px;
+  height: 600px;
+  border: 8px solid #000;
+  border-radius: 30px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  margin-bottom: 30px;
+  position: relative;
 }
 
-/* 确保Tailwind CSS类正常工作 */
-:global(.bg-primary) {
-  background-color: #10B981 !important;
+.phone-status-bar {
+  height: 40px;
+  background-color: #f3f4f6;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
 }
 
-:global(.text-primary) {
-  color: #10B981 !important;
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
 }
 
-:global(.bg-accent) {
-  background-color: #F97316 !important;
+.red { background-color: #ef4444; }
+.yellow { background-color: #f59e0b; }
+.green { background-color: #10b981; }
+
+.title {
+  margin-left: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
-:global(.text-accent) {
-  color: #F97316 !important;
+.footer {
+  margin-top: auto;
 }
 
-:global(.bg-neutral) {
-  background-color: #6B7280 !important;
-}
-
-:global(.text-neutral) {
-  color: #6B7280 !important;
-}
-
-:global(.bg-light) {
-  background-color: #F3F4F6 !important;
-}
-
-:global(.text-light) {
-  color: #F3F4F6 !important;
-}
-
-:global(.bg-dark) {
-  background-color: #1F2937 !important;
-}
-
-:global(.text-dark) {
-  color: #1F2937 !important;
-}
-
-:global(.bg-aiMessage) {
-  background-color: #EBF4FF !important;
-}
-
-:global(.bg-userMessage) {
-  background-color: #E6FFFA !important;
-}
-
-:global(.message-bubble-left) {
-  border-radius: 18px 18px 18px 4px !important;
-}
-
-:global(.message-bubble-right) {
-  border-radius: 18px 18px 4px 18px !important;
+.footer p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
 }
 </style>
