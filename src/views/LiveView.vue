@@ -26,21 +26,16 @@
       <div class="digital-human-container">
         <!-- 数字人视频显示区域 -->
         <div class="video-section">
-          <div class="video-container">
+          <div class="video-container"><!-- 该true的一个不能少 -->
             <video 
               ref="videoRef" 
-              autoplay 
-              playsinline 
+              autoplay="true" 
+              playsinline="true" 
               class="digital-human-video"
               :class="{ connected: isConnected }"
             ></video>
+
             <audio ref="audioRef" autoplay playsinline class="audio-hidden"></audio>
-            
-            <!-- 连接状态指示 -->
-            <div class="connection-status" :class="{ connected: isConnected }">
-              <i class="fa" :class="isConnected ? 'fa-circle' : 'fa-circle-o-notch fa-spin'"></i>
-              {{ isConnected ? '已连接' : '连接中...' }}
-            </div>
             
             <!-- 未连接时的占位图 -->
             <div v-if="!isConnected" class="video-placeholder">
@@ -48,6 +43,12 @@
                 <i class="fa fa-user-circle-o"></i>
               </div>
               <p class="placeholder-text">AI数字人陪伴中...</p>
+            </div>
+            
+            <!-- 连接状态指示 -->
+            <div class="connection-status" :class="{ connected: isConnected }">
+              <i class="fa" :class="isConnected ? 'fa-circle' : 'fa-circle-o-notch fa-spin'"></i>
+              {{ isConnected ? '已连接' : '连接中...' }}
             </div>
           </div>
         </div>
@@ -309,11 +310,11 @@ const negotiate = async () => {
       }
     });
     
-    // 发送offer到后端
+    // 发送offer到LiveTalking服务（通过ark代理）
     const offerData = pc.value.localDescription;
     if (!offerData) throw new Error('Local description not available');
     
-    const response = await fetch('/offer', {
+    const response = await fetch('/ark/offer', {
       body: JSON.stringify({
         sdp: offerData.sdp,
         type: offerData.type,
@@ -355,10 +356,20 @@ const startConnection = () => {
 
   // 处理接收到的媒体流
   pc.value.addEventListener('track', (evt) => {
+    console.log('Track received:', evt.track.kind, evt.streams);
+    console.log('Video ref available:', !!videoRef.value);
+    console.log('Audio ref available:', !!audioRef.value);
+    
     if (evt.track.kind === 'video' && videoRef.value) {
+      console.log('Setting video stream to video element');
       videoRef.value.srcObject = evt.streams[0];
+      videoRef.value.play().catch(e => console.error('Video play failed:', e));
+      console.log('Video stream set successfully');
     } else if (evt.track.kind === 'audio' && audioRef.value) {
+      console.log('Setting audio stream to audio element');
       audioRef.value.srcObject = evt.streams[0];
+      audioRef.value.play().catch(e => console.error('Audio play failed:', e));
+      console.log('Audio stream set successfully');
     }
   });
 
@@ -479,7 +490,7 @@ onUnmounted(() => {
   background-color: #f8fafc;
 }
 
-/* 头部样式 */
+/* 头部样式 - 与ChatView保持一致 */
 .live-header {
   background-color: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -550,7 +561,7 @@ onUnmounted(() => {
   color: #374151;
 }
 
-/* 主内容区域 */
+/* 主内容区域 - 根据原型设计调整布局 */
 .live-main {
   flex: 1;
   display: flex;
@@ -573,7 +584,7 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-/* 视频区域 */
+/* 视频区域 - 根据原型设计，上面是数字人视频 */
 .video-section {
   flex: 0 0 60%;
   background-color: #1f2937;
@@ -652,7 +663,7 @@ onUnmounted(() => {
   color: #d1d5db;
 }
 
-/* 控制按钮区域 */
+/* 控制按钮区域 - 根据原型设计，下面是控制按钮 */
 .controls-section {
   flex: 0 0 auto;
   padding: 16px;
@@ -705,7 +716,7 @@ onUnmounted(() => {
   transform: none;
 }
 
-/* 聊天区域 */
+/* 聊天区域 - 与ChatView保持一致 */
 .chat-section {
   flex: 1;
   display: flex;
@@ -713,7 +724,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* 消息区域 */
+/* 消息区域 - 与ChatView保持一致 */
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -858,7 +869,7 @@ onUnmounted(() => {
   background-color: #e5e7eb;
 }
 
-/* 输入区域 */
+/* 输入区域 - 与ChatView保持一致 */
 .input-container {
   padding: 16px;
   border-top: 1px solid #e5e7eb;
