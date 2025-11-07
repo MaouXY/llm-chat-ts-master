@@ -1,4 +1,5 @@
 import { http } from './http';
+import type { ChildLoginDTO, ResultLoginVO } from '../types/auth';
 
 // 用户登录接口
 export const login = (params: {
@@ -6,6 +7,11 @@ export const login = (params: {
   password: string;
 }) => {
   return http.post<{ token: string; userInfo: any }>('/auth/login', params);
+};
+
+// 儿童登录接口
+export const childLogin = (params: ChildLoginDTO) => {
+  return http.post<ResultLoginVO>('/api/child/login', params);
 };
 
 // 用户注册接口

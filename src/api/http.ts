@@ -6,7 +6,8 @@ const service: AxiosInstance = axios.create({
   timeout: 100000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: false // 禁用withCredentials，避免CORS预检请求
 });
 
 // 请求拦截器
@@ -14,7 +15,8 @@ service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 从localStorage获取token
     const token = localStorage.getItem('token');
-    if (token && config.headers) {
+    // 只有在有token且不是登录请求时才添加Authorization头
+    if (token && config.headers && !config.url?.includes('/child/login')) {
       config.headers.Authorization = `${token}`;
     }
     
@@ -39,13 +41,13 @@ service.interceptors.response.use(
     // 根据后端约定的响应格式处理
     const { data } = response;
     
-    // 假设后端返回的数据格式为 { code: number, message: string, data: any }
-    if (data.code === 200) {
-      return data.data; // 直接返回业务数据
+    // 后端返回的数据格式为 { code: number, msg: string, data: any }
+    if (data.code === 1) {
+      return data; // 返回完整响应数据
     } else {
       // 处理业务错误
-      handleBusinessError(data.code, data.message);
-      return Promise.reject(new Error(data.message || '请求失败'));
+      handleBusinessError(data.code, data.msg);
+      return Promise.reject(new Error(data.msg || '请求失败'));
     }
   },
   (error: AxiosError) => {

@@ -6,22 +6,99 @@
     <p>快乐成长的小伙伴</p>
 
     <div class="form-group">
-      <label>儿童账号</label>
-      <input type="text" placeholder="请输入账号" />
+      <label>儿童ID</label>
+      <input 
+        v-model="childNo" 
+        type="text" 
+        placeholder="请输入儿童ID" 
+        maxlength="20"
+      />
     </div>
     <div class="form-group">
-      <label>验证码</label>
+      <label>密码</label>
       <div class="code-group">
-        <input type="text" placeholder="请输入验证码" />
-        <button>获取验证码</button>
+        <input 
+          v-model="verifyCode" 
+          type="password" 
+          placeholder="请输入密码" 
+          maxlength="20"
+        />
       </div>
     </div>
-    <button class="login-btn">登录</button>
-    <p class="tip">忘记账号？请联系您的社工老师</p>
+    <button 
+      class="login-btn" 
+      @click="handleLogin" 
+      :disabled="isLoggingIn"
+    >
+      {{ isLoggingIn ? '登录中...' : '登录' }}
+    </button>
+    <p class="tip">忘记儿童ID？请联系您的社工老师</p>
   </div>
 </template>
-<script setup lang="ts">
 
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { childLogin } from '../api/auth';
+import { useAuthStore } from '../store/auth';
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+// 响应式数据
+const childNo = ref('');
+const verifyCode = ref('');
+const isLoggingIn = ref(false);
+
+// 处理登录
+const handleLogin = async () => {
+  if (!childNo.value) {
+    alert('请输入儿童ID');
+    return;
+  }
+  
+  if (!verifyCode.value || verifyCode.value.length !== 4) {
+    alert('请输入4位验证码');
+    return;
+  }
+  
+  isLoggingIn.value = true;
+  
+  try {
+    const response = await childLogin({
+      childNo: childNo.value,
+      verifyCode: verifyCode.value
+    });
+    
+    if (response.code === 1) {
+      // 登录成功
+      const { data } = response;
+      
+      // 存储token到localStorage和Pinia
+      authStore.loginSuccess({
+        id: data.id,
+        name: data.name,
+        role: data.role
+      }, data.token);
+      
+      alert(`欢迎回来，${data.name}！`);
+      
+      // 跳转到聊天页面
+      router.push('/chat');
+    } else {
+      // 处理业务错误，msg可能为null，提供默认错误信息
+      const errorMsg = response.msg || `登录失败，错误码：${response.code}`;
+      alert(`登录失败：${errorMsg}`);
+    }
+  } catch (error: any) {
+    console.error('登录失败详情:', error);
+    console.error('错误响应:', error.response);
+    console.error('错误状态码:', error.response?.status);
+    alert('登录失败，请检查网络连接或联系管理员');
+  } finally {
+    isLoggingIn.value = false;
+  }
+};
 </script>
 <style scoped>
 .login-page {
@@ -87,13 +164,24 @@ p {
   gap: 10px;
 }
 
-.code-group button {
+.code-group input {
+  flex: 1;
+}
+
+.code-btn {
   padding: 10px 15px;
   border: none;
   border-radius: 4px;
   background-color: #10b981;
   color: #fff;
   cursor: pointer;
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.code-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
 }
 
 .login-btn {
