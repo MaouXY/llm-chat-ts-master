@@ -13,11 +13,21 @@ const service: AxiosInstance = axios.create({
 // 请求拦截器
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 从localStorage获取token
-    const token = localStorage.getItem('token');
-    // 只有在有token且不是登录请求时才添加Authorization头
-    if (token && config.headers && !config.url?.includes('/child/login')) {
-      config.headers.Authorization = `${token}`;
+    // 请求为/wen开头的，添加Authorization头
+    if (config.url?.startsWith('/wen')) {
+      // 从localStorage获取token
+      const token = localStorage.getItem('token1');
+      // 只有在有token且不是登录请求时才添加Authorization头
+      if (token && config.headers && !config.url?.includes('/child/login')) {
+        config.headers.Authorization = `${token}`;
+      }
+    } else { 
+      // 从localStorage获取token
+      const token = localStorage.getItem('token');
+      // 只有在有token且不是登录请求时才添加Authorization头
+      if (token && config.headers && !config.url?.includes('/child/login')) {
+        config.headers.Authorization = `${token}`;
+      }
     }
     
     // 可以在这里添加loading状态
@@ -42,13 +52,15 @@ service.interceptors.response.use(
     const { data } = response;
     
     // 后端返回的数据格式为 { code: number, msg: string, data: any }
-    if (data.code === 1) {
-      return data; // 返回完整响应数据
-    } else {
+    // 只有当 code 不为 1 时才抛出错误
+    if (data.code !== 1 && data.code !== 200) {
       // 处理业务错误
       handleBusinessError(data.code, data.msg);
       return Promise.reject(new Error(data.msg || '请求失败'));
     }
+    
+    // 成功时返回完整响应数据
+    return data;
   },
   (error: AxiosError) => {
     // 关闭loading状态
@@ -90,6 +102,12 @@ service.interceptors.response.use(
 
 // 处理业务错误
 function handleBusinessError(code: number, message: string): void {
+  // 如果是成功的消息，不要显示为错误
+  if (message && (message.includes('成功') || message.includes('success'))) {
+    console.warn('业务提示:', message);
+    return;
+  }
+  
   switch (code) {
     case 4001:
       // 自定义错误码处理

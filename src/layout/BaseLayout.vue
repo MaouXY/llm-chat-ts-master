@@ -28,6 +28,20 @@
       >
         数字人对话
       </button>
+      <!-- 文学疗愈页面按钮 -->
+      <button 
+        @click="switchTab('litheal')"
+        :class="{ active: currentTab === 'litheal' }"
+      >
+        文学疗愈
+      </button>
+      <!-- 书籍检索页面按钮 -->
+      <button 
+        @click="switchTab('booksearch')"
+        :class="{ active: currentTab === 'booksearch' }"
+      >
+        书籍检索
+      </button>
     </div>
   </div>
   <!-- 主要内容-手机展示框 -->
