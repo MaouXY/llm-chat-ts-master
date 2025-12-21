@@ -48,13 +48,21 @@
             :class="['message', message.sender]">
             
             <!-- AI消息 -->
-            <div v-if="message.sender === 'ai'" class="message-wrapper ai-message">
+            <div v-if="message.sender === 'assistant'" class="message-wrapper ai-message">
               <div class="avatar ai-avatar">
                 <i class="fa fa-robot"></i>
               </div>
               <div class="message-content">
-                <div class="bubble ai-bubble">
-                  {{ message.content }}
+                <!-- 根据消息内容是否为空和发送状态显示打字指示器或实际内容 -->
+                <div :class="['bubble', 'ai-bubble', { 'typing-indicator': isSending && message.content === '' }]">
+                  <template v-if="isSending && message.content === ''">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </template>
+                  <template v-else>
+                    {{ message.content }}
+                  </template>
                 </div>
                 <div class="message-time">
                   {{ formatTime(message.timestamp) }}
@@ -74,20 +82,6 @@
               </div>
               <div class="avatar user-avatar">
                 <i class="fa fa-child"></i>
-              </div>
-            </div>
-          </div>
-
-          <!-- 打字指示器 -->
-          <div v-if="isSending" class="message-wrapper ai-message">
-            <div class="avatar ai-avatar">
-              <i class="fa fa-robot"></i>
-            </div>
-            <div class="message-content">
-              <div class="bubble ai-bubble typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
               </div>
             </div>
           </div>
@@ -144,7 +138,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { useAuthStore } from '../store/auth';
-import { sendChatMessage, type LocalMessage, convertToApiMessages, createLocalMessageFromResponse } from '../api/chat';
+import { sendChatMessageStream, processStreamResponse, type LocalMessage, convertToApiMessages, createLocalMessageFromResponse } from '../api/chat';
 
 // 响应式数据
 const messages = ref<LocalMessage[]>([]);
@@ -252,37 +246,69 @@ const sendMessage = async () => {
   
   // 获取AI回复
   isSending.value = true;
+
+  // 创建AI回复消息的占位符
+  const aiMessage: LocalMessage = {
+    id: `ai-${Date.now()}`,
+    content: '',
+    sender: 'assistant',
+    timestamp: new Date(),
+    type: 'text'
+  };
+  const aiMessageIndex = messages.value.length;
+  messages.value.push(aiMessage);
+  
   try {
     // 准备请求参数
     const requestData = {
       chatRequest: {
         prompt: content,
-        history: convertToApiMessages(messages.value.slice(0, -1)) // 排除当前用户消息
+        history: convertToApiMessages(messages.value.slice(0, -2)) // 排除当前用户消息和AI占位符
       },
       contentType: 'text',
       sessionId: Date.now().toString(),
       digiSessionId: ''
     };
 
-    const response = await sendChatMessage(requestData);
+    // 获取流式响应读取器
+    const reader = await sendChatMessageStream(requestData);
     
-    if (response.code === 1) {
-      // 添加AI回复消息
-      const aiMessage = createLocalMessageFromResponse(response.data.content, 'ai');
-      messages.value.push(aiMessage);
-      saveMessages();
-    } else {
-      // 处理业务错误
-      const errorMsg = response.msg || `发送失败，错误码：${response.code}`;
-      const errorMessage = createLocalMessageFromResponse(`发送失败：${errorMsg}`, 'ai');
-      messages.value.push(errorMessage);
-      saveMessages();
-    }
+    // 处理流式响应
+    await processStreamResponse(
+      reader,
+      (content: string) => {
+        // 实时更新AI消息内容
+        if (messages.value[aiMessageIndex]) {
+          // 修复可能的Markdown语法问题
+          let processedContent = content;
+          processedContent = processedContent.replace(/#\s+#\s+#/g, '###');
+          processedContent = processedContent.replace(/#\s+#/g, '##');
+          
+          messages.value[aiMessageIndex].content += processedContent;
+          
+          // 确保聊天区域滚动到底部
+          setTimeout(() => {
+            scrollToBottom();
+          }, 0);
+        }
+      },
+      (error: Error) => {
+        console.error('流式响应错误:', error);
+        // 更新AI消息为错误信息
+        if (messages.value[aiMessageIndex]) {
+          messages.value[aiMessageIndex].content = `错误: ${error.message}`;
+        }
+      }
+    );
+    
+    // 流结束，保存完整聊天记录
+    saveMessages();
   } catch (error: any) {
     console.error('发送消息失败:', error);
-    // 添加错误消息
-    const errorMessage = createLocalMessageFromResponse('发送失败，请检查网络连接或联系管理员', 'ai');
-    messages.value.push(errorMessage);
+    // 更新AI消息为错误信息
+    if (messages.value[aiMessageIndex]) {
+      messages.value[aiMessageIndex].content = `发送失败: ${error.message}`;
+    }
     saveMessages();
   } finally {
     isSending.value = false;
@@ -300,7 +326,7 @@ onMounted(() => {
     const welcomeMessage: LocalMessage = {
       id: 'welcome',
       content: '你好呀！我是你的AI陪伴助手，今天过得怎么样？有什么想和我分享的吗？',
-      sender: 'ai',
+      sender: 'assistant',
       timestamp: new Date(),
       type: 'text'
     };
