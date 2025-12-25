@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/ark': {//liveTalking服务
-        target: 'http://localhost:8010',
+        target: 'http://localhost:8989',
         changeOrigin: true,
         // 路径重写（如果需要）
         rewrite: (path) => path.replace(/^\/ark/, '')

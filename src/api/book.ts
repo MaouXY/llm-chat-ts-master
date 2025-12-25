@@ -56,7 +56,7 @@ export const searchBooks = (params: BookQuetyDTO) => {
 
 // 分页查询书籍ID列表接口调用函数
 export const getBookListPage = (params: BookQuetyPageDTO) => {
-  return http.post<ResultPageResultLong>('/wen/book/list/page', params);
+  return http.post<ResultPageResultLong>('/wen/book/search/page', params);
 };
 
 // 批量获取书籍详情接口调用函数
